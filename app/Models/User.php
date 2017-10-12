@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -28,4 +28,14 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+    /**
+     * 自定义用Passport授权登录：用户名+密码
+     * @param $username
+     * @return mixed
+     */
+    public function findForPassport($username)
+    {
+        return self::where('name', $username)->first();
+    }
 }
