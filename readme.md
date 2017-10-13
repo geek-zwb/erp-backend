@@ -2,12 +2,13 @@
 
 ## 安装
 ```
-#
+# 安装依赖包
 composer install
 
-# 
+# 生成 APP_KEY
 php artisan key:generate
 
+# 修改配置文件，配置数据库等
 vim .env
 
 # 生成数据表
