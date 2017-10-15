@@ -67,7 +67,7 @@ class UserController extends ApiController
         if (Auth::attempt([$loginType => $credentials['username'], 'password' => $credentials['password']], $request->has('remember'))) {
             return $this->sendLoginResponse($request);
         }
-        return $this->setStatusCode(401)->failed('登录失败');
+        return $this->setStatusCode(401)->failed('账号或者密码错误');
     }
 
     /**
