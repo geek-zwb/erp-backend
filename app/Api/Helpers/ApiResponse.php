@@ -111,6 +111,10 @@ trait ApiResponse
         return $this->status($status, compact('data'));
     }
 
+    public function successWithCollection($response, $status = 'success') {
+        $response->content();
+    }
+
     /**
      * @param string $message
      * @return mixed
