@@ -16,6 +16,10 @@ class CreatePurchasesTable extends Migration
         Schema::create('purchases', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('supplier_id');
+            $table->string('delivery_code')->nullable()->comment('送货单号');
+            $table->date('invoice_date')->nullable()->comment('发票日期');
+            $table->string('invoice_code')->nullable();
+            $table->string('invoice_amount')->nullable();
             $table->float('arrears')->default(0)->comment('欠款');
             $table->text('note')->nullable();
             $table->timestamps();
