@@ -18,5 +18,8 @@ Route::post('login', 'Api\UserController@login');
 Route::post('register', 'Api\UserController@register');
 
 Route::group(['middleware' => 'auth:api'], function(){
-    Route::get('supplier', 'Api\SupplierController@index');
+    Route::resource('unit', 'Api\UnitController');
+    Route::resource('type', 'Api\TypeController');
+    Route::resource('product', 'Api\ProductController');
+    Route::resource('supplier', 'Api\SupplierController');
 });
