@@ -101,6 +101,6 @@ class CustomerController extends ApiController
 
         $customer->delete();
 
-        $this->message('delete success');
+        return $this->message('delete success');
     }
 }

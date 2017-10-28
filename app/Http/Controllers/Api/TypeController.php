@@ -96,6 +96,6 @@ class TypeController extends ApiController
 
         $type->delete();
 
-        $this->message('delete success');
+        return $this->message('delete success');
     }
 }

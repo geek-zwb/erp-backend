@@ -96,6 +96,6 @@ class UnitController extends ApiController
 
         $unit->delete();
 
-        $this->message('delete success');
+        return $this->message('delete success');
     }
 }
