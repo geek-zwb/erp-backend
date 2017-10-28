@@ -22,11 +22,6 @@ class UnitController extends ApiController
      */
     public function index()
     {
-        /*$units = Unit::with(['purchases' => function ($query) {
-            $query->with(['products' => function ($query1) {
-                $query1->select('products.id', 'products.sku', 'products.name');
-            }]);
-        }])->get();*/
         $units = Unit::all();
         return $this->success($units);
     }
