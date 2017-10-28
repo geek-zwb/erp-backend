@@ -19,9 +19,9 @@ class CreateProductsTable extends Migration
             $table->string('sku')->unique()->comment('产品唯一编号');
             $table->unsignedInteger('unit_id');
             $table->unsignedInteger('type_id');
-            $table->string('description')->nullable();
-            $table->string('picture')->nullable();
-            $table->text('note')->nullable();
+            $table->string('description')->default('');
+            $table->string('picture')->default('');
+            $table->string('note')->default('');
             $table->timestamps();
 
             $table->foreign('unit_id')->references('id')->on('units');

@@ -35,7 +35,7 @@ class UnitController extends ApiController
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'reqired|unique:units',
+            'name' => 'required|unique:units',
         ]);
 
         if ($validator->fails()) {
@@ -44,7 +44,7 @@ class UnitController extends ApiController
 
         $unit = new Unit();
         $unit->name = $request->get('name');
-        $unit->note = $request->get('note');
+        $unit->note = $request->get('note', '');
 
         $unit->save();
 
@@ -73,7 +73,7 @@ class UnitController extends ApiController
 
         $unit = Unit::find($id);
         $unit->name = $request->get('name');
-        $unit->note = $request->get('note');
+        $unit->note = $request->filled('note') ? $request->get('note') : $unit->note;
 
         $unit->save();
 
@@ -90,7 +90,7 @@ class UnitController extends ApiController
     {
         $unit = Unit::find($id);
 
-        if($unit->products) {
+        if($unit->products->isNotEmpty()) {
             return $this->failed('请先删除所有以 '.$unit->name.' 为单位的商品， 或更改相关商品的计数单位');
         }
 

@@ -34,7 +34,7 @@ class SupplierController extends ApiController
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'reqired|unique:suppliers',
+            'name' => 'required|unique:suppliers',
             'phone' => 'required',
         ]);
 
@@ -45,8 +45,8 @@ class SupplierController extends ApiController
         $supplier = new Supplier();
         $supplier->name = $request->get('name');
         $supplier->phone = $request->get('phone');
-        $supplier->address = $request->get('address');
-        $supplier->note = $request->get('note');
+        $supplier->address = $request->get('address', '');
+        $supplier->note = $request->get('note', '');
 
         $supplier->save();
 
@@ -77,8 +77,8 @@ class SupplierController extends ApiController
         $supplier = Supplier::find($id);
         $supplier->name = $request->get('name');
         $supplier->phone = $request->get('phone');
-        $supplier->address = $request->get('address');
-        $supplier->note = $request->get('note');
+        $supplier->address = $request->filled('address') ? $request->get('address') : $supplier->address;
+        $supplier->note = $request->filled('note') ? $request->get('note') : $supplier->note;
 
         $supplier->save();
 
@@ -95,12 +95,12 @@ class SupplierController extends ApiController
     {
         $supplier = Supplier::find($id);
 
-        if($supplier->purchase) {
-            return $this->failed('请先删除'.$supplier->name.'供应商的所有订货单');
+        if($supplier->purchases->isNotEmpty()) {
+            return $this->failed('请先删除'.$supplier->name.'此供应商的所有订货单');
         }
 
         $supplier->delete();
 
-        $this->message('delete success');
+        return $this->message('delete success');
     }
 }

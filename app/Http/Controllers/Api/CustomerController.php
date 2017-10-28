@@ -40,7 +40,7 @@ class CustomerController extends ApiController
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'reqired|unique:customers',
+            'name' => 'required|unique:customers',
         ]);
 
         if ($validator->fails()) {
@@ -95,7 +95,7 @@ class CustomerController extends ApiController
     {
         $customer = Customer::find($id);
 
-        if($customer->orders) {
+        if($customer->orders->isNotEmpty()) {
             return $this->failed('请先删除该客户的所有订单');
         }
 

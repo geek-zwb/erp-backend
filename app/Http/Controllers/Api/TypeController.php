@@ -29,13 +29,13 @@ class TypeController extends ApiController
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'reqired|unique:types',
+            'name' => 'required|unique:types',
         ]);
 
         if ($validator->fails()) {
@@ -44,7 +44,7 @@ class TypeController extends ApiController
 
         $type = new Type();
         $type->name = $request->get('name');
-        $type->note = $request->get('note');
+        $type->note = $request->get('note', '');
 
         $type->save();
 
@@ -54,8 +54,8 @@ class TypeController extends ApiController
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  \Illuminate\Http\Request $request
+     * @param  int $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
@@ -73,7 +73,7 @@ class TypeController extends ApiController
 
         $type = Type::find($id);
         $type->name = $request->get('name');
-        $type->note = $request->get('note');
+        $type->note = $request->filled('note') ? $request->get('note') : $type->note;
 
         $type->save();
 
@@ -83,14 +83,14 @@ class TypeController extends ApiController
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
         $type = Type::find($id);
 
-        if($type->products) {
+        if ($type->products->isNotEmpty()) {
             return $this->failed('请先删除该类别下面商品， 或更改相关商品的所属类别');
         }
 
