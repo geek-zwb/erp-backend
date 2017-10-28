@@ -94,6 +94,11 @@ class CustomerController extends ApiController
     public function destroy($id)
     {
         $customer = Customer::find($id);
+
+        if($customer->orders) {
+            return $this->failed('请先删除该客户的所有订单');
+        }
+
         $customer->delete();
 
         $this->message('delete success');

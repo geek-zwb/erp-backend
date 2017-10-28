@@ -89,6 +89,11 @@ class TypeController extends ApiController
     public function destroy($id)
     {
         $type = Type::find($id);
+
+        if($type->products) {
+            return $this->failed('请先删除该类别下面商品， 或更改相关商品的所属类别');
+        }
+
         $type->delete();
 
         $this->message('delete success');

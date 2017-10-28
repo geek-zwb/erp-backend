@@ -89,6 +89,11 @@ class UnitController extends ApiController
     public function destroy($id)
     {
         $unit = Unit::find($id);
+
+        if($unit->products) {
+            return $this->failed('请先删除所有以 '.$unit->name.' 为单位的商品， 或更改相关商品的计数单位');
+        }
+
         $unit->delete();
 
         $this->message('delete success');

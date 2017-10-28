@@ -94,6 +94,11 @@ class SupplierController extends ApiController
     public function destroy($id)
     {
         $supplier = Supplier::find($id);
+
+        if($supplier->purchase) {
+            return $this->failed('请先删除'.$supplier->name.'供应商的所有订货单');
+        }
+
         $supplier->delete();
 
         $this->message('delete success');
