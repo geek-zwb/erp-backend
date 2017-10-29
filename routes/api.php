@@ -23,4 +23,5 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::resource('product', 'Api\ProductController');
     Route::resource('supplier', 'Api\SupplierController');
     Route::resource('customer', 'Api\CustomerController');
+    Route::resource('warehouse', 'Api\WarehouseController');
 });
