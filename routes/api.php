@@ -20,8 +20,14 @@ Route::post('register', 'Api\UserController@register');
 Route::group(['middleware' => 'auth:api'], function(){
     Route::resource('unit', 'Api\UnitController');
     Route::resource('type', 'Api\TypeController');
+
+    Route::get('product/{key}', 'Api\ProductController@getProductByKey');
     Route::resource('product', 'Api\ProductController');
+
     Route::resource('supplier', 'Api\SupplierController');
     Route::resource('customer', 'Api\CustomerController');
     Route::resource('warehouse', 'Api\WarehouseController');
+    Route::resource('purchase', 'Api\PurchaseController');
+    Route::resource('product', 'Api\ProductController');
+    Route::resource('order', 'Api\OrderController');
 });

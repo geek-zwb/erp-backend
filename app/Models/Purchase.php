@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Purchase extends Model
@@ -15,6 +16,11 @@ class Purchase extends Model
         'arrears',
         'note'
     ];
+
+    /*public function getCreatedAtAttribute($date)
+    {
+        return Carbon::createFromFormat('Y-m-d H:i:s', $date)->format('Y-m-d');
+    }*/
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany

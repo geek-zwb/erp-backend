@@ -15,6 +15,7 @@ class CreatePurchasesTable extends Migration
     {
         Schema::create('purchases', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('name')->comment('订货标识');
             $table->unsignedInteger('supplier_id');
             $table->string('delivery_code')->default('')->comment('送货单号');
             $table->date('invoice_date')->default('1000-01-01')->comment('发票日期');
