@@ -15,20 +15,48 @@ use Illuminate\Validation\Rule;
 
 class CustomerController extends ApiController
 {
+    protected $fields = [
+        'first_name' => '',
+        'last_name' => '',
+        'email' => '',
+        'phone' => '',
+        'address' => '',
+        'birthday' => '1000-01-01',
+        'note' => '',
+    ];
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        /*$customers = Customer::with(['purchases' => function ($query) {
-            $query->with(['products' => function ($query1) {
-                $query1->select('products.id', 'products.sku', 'products.name');
-            }]);
-        }])->get();*/
-        $customers = Customer::all();
-        return $this->success($customers);
+        $result = [];
+
+        // 分页
+        $page = (int)$request->query('page', 1);
+        $perPage = (int)$request->query('perPage', 10);
+        $skip = ($page - 1) * $perPage;
+
+        // 排序
+        $column = $request->query('column', 'id');
+        $orderBy = $request->query('order', 'desc');
+
+
+        $customers = Customer::withCount('orders')
+            ->skip($skip)
+            ->take($perPage)
+            ->orderBy($column, $orderBy)
+            ->get();
+
+        $result['data'] = $customers;
+        $result['total'] = Customer::count();
+        $result['current_page'] = $page;
+        $result['per_page'] = $perPage;
+        $result['last_page'] = ceil($result['total'] / $perPage);
+
+        return $this->success($result);
     }
 
     /**
@@ -40,16 +68,25 @@ class CustomerController extends ApiController
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|unique:customers',
+            'name' => 'required',
+            'email' => 'required|email|unique:customers'
         ]);
 
         if ($validator->fails()) {
             return $this->failed($validator->errors());
         }
 
+        $nameArr = preg_split('/[\s,]+/', $request->input('name'));
+
+        $request->request->add([
+           'first_name' => $nameArr[0],
+           'last_name' => isset($nameArr[1]) ? $nameArr[1] : '',
+        ]);
+
         $customer = new Customer();
-        $customer->name = $request->get('name');
-        $customer->note = $request->get('note');
+        foreach (array_keys($this->fields) as $field) {
+            $customer->$field = $request->get($field, $this->fields[$field]);
+        }
 
         $customer->save();
 
@@ -66,7 +103,7 @@ class CustomerController extends ApiController
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => [
+            'email' => [
                 'required',
                 Rule::unique('customers')->ignore($id),
             ]
@@ -76,13 +113,23 @@ class CustomerController extends ApiController
             return $this->failed($validator->errors());
         }
 
+        if($request->has('name')) {
+            $nameArr = preg_split('/[\s,]+/', $request->input('name'));
+
+            $request->request->replace([
+                'first_name' => $nameArr[0],
+                'last_name' => isset($nameArr[1]) ? $nameArr[1] : '',
+            ]);
+        }
+
         $customer = Customer::find($id);
-        $customer->name = $request->get('name');
-        $customer->note = $request->get('note');
+        foreach (array_keys($this->fields) as $field) {
+            $customer->$field = $request->filled($field) ? $request->get($field) : $customer->$field;
+        }
 
         $customer->save();
 
-        return $this->success($customer);
+        return $this->message('update_success');
     }
 
     /**
