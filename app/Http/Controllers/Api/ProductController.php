@@ -15,6 +15,16 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends ApiController
 {
+    protected $fields = [
+        'name' => '',
+        'sku' => '',
+        'unit_id' => '',
+        'type_id' => '0',
+        'description' => '',
+        'picture' => '',
+        'note' => '',
+    ];
+
     /**
      * Display a listing of the resource.
      *
@@ -34,23 +44,43 @@ class ProductController extends ApiController
         $order = $request->query('order', 'desc');
 
 
-        $products = Product::with('products')
+        $products = Product::with(['orders', 'purchases', 'warehouses'])
             ->skip($skip)
             ->take($perPage)
             ->orderBy($column, $order)
             ->get();
 
-        // 产品数量统计以及花费统计
+        // 产品数量统计以及收支、库存统计
         foreach ($products as $product) {
-            $product->count = 0;
-            $product->totalCost = 0;
-            foreach ($product->products as $product) {
-                $product->count += $product->pivot->count;
-                $product->totalCost += $product->pivot->price * $product->pivot->count;
-                $product->count = $product->pivot->count;
-                $product->price = $product->pivot->price;
-                $product->total = $product->pivot->price * $product->pivot->count;
+            $product->inventory = 0;    // 总库存
+            $product->inQty = 0;    // 采购进的数量
+            $product->totalCost = 0;    // 采购总花费
+            $product->income = 0;   // 总收入
+            $product->outQty = 0;    // 已卖出的数量
+            $orderCount = 0;    // 改产品售出订单数
+
+            // 售出统计
+            foreach ($product->orders as $order) {
+                $orderCount += 1;
+                $product->outQty += $order->pivot->count;
+                $product->income += $order->pivot->price * $order->pivot->count;
             }
+            $product->orderCount = $orderCount;
+
+            // 采购统计
+            foreach ($product->purchases as $purchase) {
+                $product->inQty += $purchase->pivot->count;
+                $product->totalCost += $purchase->pivot->price * $purchase->pivot->count;
+            }
+
+            // 库存统计
+            foreach ($product->warehouses as $warehouse) {
+                $product->inventory += $warehouse->pivot->inventory;
+                $warehouse->inventory += $warehouse->pivot->inventory;
+            }
+
+            unset($product->purchases);
+            unset($product->orders);
         }
 
         $result['data'] = $products;
@@ -71,7 +101,10 @@ class ProductController extends ApiController
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|unique:products',
+            'name' => 'required',
+            'sku' => 'required|unique:products',
+            'unit_id' => 'required',
+            'type_id' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -79,9 +112,9 @@ class ProductController extends ApiController
         }
 
         $product = new Product();
-        $product->name = $request->get('name');
-        $product->note = $request->get('note', '');
-        $product->status = $request->get('status', true);
+        foreach (array_keys($this->fields) as $field) {
+            $product->$field = $request->get($field, $this->fields[$field]);
+        }
 
         $product->save();
 
@@ -98,10 +131,13 @@ class ProductController extends ApiController
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => [
+            'name' => 'required',
+            'sku' => [
                 'required',
                 Rule::unique('products')->ignore($id),
-            ]
+            ],
+            'unit_id' => 'required',
+            'type_id' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -109,13 +145,13 @@ class ProductController extends ApiController
         }
 
         $product = Product::find($id);
-        $product->name = $request->get('name');
-        $product->note = $request->filled('note') ? $request->get('note') : $product->note;
-        $product->status = $request->filled('status') ? $request->get('status') : $product->status;
+        foreach (array_keys($this->fields) as $field) {
+            $product->$field = $request->filled($field) ? $request->get($field) : $product->$field;
+        }
 
         $product->save();
 
-        return $this->success($product);
+        return $this->message('update_success');
     }
 
     /**
@@ -128,9 +164,15 @@ class ProductController extends ApiController
     {
         $product = Product::find($id);
 
-        if ($product->products->isNotEmpty()) {
-            return $this->failed('请先删除或转移仓库 ' . $product->name . ' 里的所有商品');
+        if ($product->purchases->isNotEmpty()) {
+            return $this->failed('请先删除相关的采购单');
         }
+        if ($product->orders->isNotEmpty()) {
+            return $this->failed('请先删除相关的订单（发货单） ');
+        }
+
+        $product->purchases()->detach();
+        $product->orders()->detach();
 
         $product->delete();
 
