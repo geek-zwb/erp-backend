@@ -16,8 +16,7 @@ use Illuminate\Validation\Rule;
 class CustomerController extends ApiController
 {
     protected $fields = [
-        'first_name' => '',
-        'last_name' => '',
+        'name' => '',
         'email' => '',
         'phone' => '',
         'address' => '',
@@ -76,12 +75,12 @@ class CustomerController extends ApiController
             return $this->failed($validator->errors());
         }
 
-        $nameArr = preg_split('/[\s,]+/', $request->input('name'));
+        /*$nameArr = preg_split('/[\s,]+/', $request->input('name'));
 
         $request->request->add([
            'first_name' => $nameArr[0],
            'last_name' => isset($nameArr[1]) ? $nameArr[1] : '',
-        ]);
+        ]);*/
 
         $customer = new Customer();
         foreach (array_keys($this->fields) as $field) {
@@ -113,15 +112,6 @@ class CustomerController extends ApiController
             return $this->failed($validator->errors());
         }
 
-        if($request->has('name')) {
-            $nameArr = preg_split('/[\s,]+/', $request->input('name'));
-
-            $request->request->replace([
-                'first_name' => $nameArr[0],
-                'last_name' => isset($nameArr[1]) ? $nameArr[1] : '',
-            ]);
-        }
-
         $customer = Customer::find($id);
         foreach (array_keys($this->fields) as $field) {
             $customer->$field = $request->filled($field) ? $request->get($field) : $customer->$field;
@@ -149,5 +139,18 @@ class CustomerController extends ApiController
         $customer->delete();
 
         return $this->message('delete success');
+    }
+
+    /**
+     * @param $key id email name
+     * @return mixed
+     */
+    public function getCustomerByKey($key) {
+        $customers = Customer::select('id', 'email', 'name')
+            ->where('id', $key)
+            ->orWhere('email', 'like', $key . '%')
+            ->orWhere('name', 'like', $key . '%')
+            ->get();
+        return $this->success($customers);
     }
 }

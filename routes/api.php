@@ -25,7 +25,10 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::resource('product', 'Api\ProductController');
 
     Route::resource('supplier', 'Api\SupplierController');
+
+    Route::get('customer/{key}', 'Api\CustomerController@getCustomerByKey');
     Route::resource('customer', 'Api\CustomerController');
+
     Route::resource('warehouse', 'Api\WarehouseController');
     Route::resource('purchase', 'Api\PurchaseController');
     Route::resource('product', 'Api\ProductController');

@@ -8,6 +8,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -49,6 +50,7 @@ class OrderController extends ApiController
 
 
         $orders = Order::with('products')
+            ->with('customer')
             ->skip($skip)
             ->take($perPage)
             ->orderBy($column, $orderBy)
@@ -58,6 +60,7 @@ class OrderController extends ApiController
         foreach ($orders as $order) {
             $order->count = 0;
             $order->totalCost = 0;
+            $order->productsCount = $order->products->count(); // 几种产品~
             foreach ($order->products as $product) {
                 $order->count += $product->pivot->count;
                 $order->totalCost += $product->pivot->price * $product->pivot->count;
@@ -86,7 +89,7 @@ class OrderController extends ApiController
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|filled',
-            'customer_id' => 'required|filled|exists:suppliers,id',
+            'customer_email' => 'required|filled|exists:customers,email',
             'delivery_date' => 'filled',
             'products' => 'required|array'
         ]);
@@ -94,6 +97,11 @@ class OrderController extends ApiController
         if ($validator->fails()) {
             return $this->failed($validator->errors());
         }
+
+        $customer_id = Customer::where('email', $request->input('customer_email'))->first()->id;
+        $request->request->add([
+            'customer_id' => $customer_id
+        ]);
 
         $order = new Order();
         foreach (array_keys($this->fields) as $field) {
@@ -129,7 +137,7 @@ class OrderController extends ApiController
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|filled',
-            'customer_id' => 'required|filled|exists:suppliers,id',
+            'customer_email' => 'required|filled|exists:customers,email',
             'delivery_date' => 'filled',
             'products' => 'required|array'
         ]);
@@ -137,6 +145,11 @@ class OrderController extends ApiController
         if ($validator->fails()) {
             return $this->failed($validator->errors());
         }
+
+        $customer_id = Customer::where('email', $request->input('customer_email'))->first()->id;
+        $request->request->add([
+           'customer_id' => $customer_id
+        ]);
 
         $order = Order::find($id);
         foreach (array_keys($this->fields) as $field) {
