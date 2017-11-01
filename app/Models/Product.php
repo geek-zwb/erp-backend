@@ -11,6 +11,7 @@ class Product extends Model
         'sku',
         'unit_id',
         'type_id',
+        'weight',
         'description',
         'picture',
         'note'

@@ -13,6 +13,7 @@ class Order extends Model
         'delivery_date',
         'delivery_code',
         'delivery_company',
+        'delivery_amount',
         'note',
     ];
 

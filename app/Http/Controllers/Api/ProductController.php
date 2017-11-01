@@ -20,6 +20,7 @@ class ProductController extends ApiController
         'sku' => '',
         'unit_id' => '',
         'type_id' => '0',
+        'weight' => 0,
         'description' => '',
         'picture' => '',
         'note' => '',

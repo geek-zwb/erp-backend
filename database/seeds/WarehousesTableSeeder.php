@@ -16,12 +16,12 @@ class WarehousesTableSeeder extends Seeder
                 'id' => 1,
                 'name' => '家',
                 'status' => 1,
-                'note' => '',
+                'note' => '采购单将存入此库存',
             ], [
                 'id' => 2,
                 'name' => '亚马逊',
                 'status' => 1,
-                'note' => '',
+                'note' => '发货单将消耗此库存',
             ]
         ]);
     }

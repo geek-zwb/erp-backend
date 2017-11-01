@@ -29,7 +29,7 @@ class OrderController extends ApiController
         'delivery_code' => '',
         'delivery_date' => '1000-01-01',
         'delivery_company' => '',
-        'delivery_amount' => '',
+        'delivery_amount' => 0,
         'note' => '',
     ];
 
