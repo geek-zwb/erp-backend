@@ -22,6 +22,7 @@ class CreateOrdersTable extends Migration
             $table->date('delivery_date')->default('1000-01-01')->comment('发货日期');
             $table->string('delivery_code')->comment('发货单号');
             $table->string('delivery_company')->comment('发货快递');
+            $table->decimal('delivery_amount',10, 3)->default(0)->comment('该发货单运费');
             $table->string('note')->default('');
             $table->timestamps();
 

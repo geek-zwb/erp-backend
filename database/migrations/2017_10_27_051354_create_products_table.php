@@ -19,6 +19,7 @@ class CreateProductsTable extends Migration
             $table->string('sku')->unique()->comment('产品唯一编号');
             $table->unsignedInteger('unit_id');
             $table->unsignedInteger('type_id');
+            $table->double('weight')->comment('产品重量');
             $table->string('description')->default('');
             $table->string('picture')->default('');
             $table->string('note')->default('');

@@ -18,7 +18,7 @@ class CreateProductPurchaseTable extends Migration
             $table->unsignedInteger('product_id');
             $table->unsignedInteger('purchase_id');
             $table->unsignedInteger('count');
-            $table->decimal('price', 6, 3)->comment('采购单价');
+            $table->decimal('price', 8, 3)->comment('采购单价');
             $table->timestamps();
 
             $table->foreign('product_id')->references('id')->on('products');

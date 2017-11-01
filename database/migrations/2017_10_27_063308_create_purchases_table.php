@@ -20,8 +20,9 @@ class CreatePurchasesTable extends Migration
             $table->string('delivery_code')->default('')->comment('送货单号');
             $table->date('invoice_date')->default('1000-01-01')->comment('发票日期');
             $table->string('invoice_code')->default('');
-            $table->string('invoice_amount')->default('');
-            $table->float('arrears')->default(0)->comment('欠款');
+            $table->decimal('invoice_amount',10, 3)->default(0);
+            $table->decimal('delivery_amount',10, 3)->default(0)->comment('该采购单运费');
+            $table->decimal('arrears',10, 3)->default(0)->comment('欠款');
             $table->string('note')->default('');
             $table->timestamps();
 

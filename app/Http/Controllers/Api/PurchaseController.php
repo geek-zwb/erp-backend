@@ -25,6 +25,7 @@ class PurchaseController extends ApiController
         'invoice_date' => '1000-01-01',
         'invoice_code' => '',
         'invoice_amount' => '',
+        'delivery_amount' => '',
         'arrears' => '0',
         'note' => '',
     ];

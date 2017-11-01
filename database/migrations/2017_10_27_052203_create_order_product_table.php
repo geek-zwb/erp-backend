@@ -18,7 +18,7 @@ class CreateOrderProductTable extends Migration
             $table->unsignedInteger('order_id');
             $table->unsignedInteger('product_id');
             $table->unsignedInteger('count')->comment('该订单中该产品的数量');
-            $table->decimal('price', 6, 3)->comment('售出单价');
+            $table->decimal('price', 8, 3)->comment('售出单价');
             $table->timestamps();
 
             $table->foreign('product_id')->references('id')->on('products');
