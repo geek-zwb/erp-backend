@@ -18,8 +18,6 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseController extends ApiController
 {
-    // TODO 对库存的修改， 事务等
-
     protected $fields = [
         'name' => '',
         'supplier_id' => '',

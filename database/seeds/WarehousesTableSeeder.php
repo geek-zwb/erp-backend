@@ -12,15 +12,17 @@ class WarehousesTableSeeder extends Seeder
     public function run()
     {
         DB::table('warehouses')->insert([
-            'id' => 1,
-            'name'=>'家',
-            'status'=> 1,
-            'note' => '',
-        ],[
-            'id' => 2,
-            'name'=>'亚马逊',
-            'status'=> 1,
-            'note' => '',
+            [
+                'id' => 1,
+                'name' => '家',
+                'status' => 1,
+                'note' => '',
+            ], [
+                'id' => 2,
+                'name' => '亚马逊',
+                'status' => 1,
+                'note' => '',
+            ]
         ]);
     }
 }

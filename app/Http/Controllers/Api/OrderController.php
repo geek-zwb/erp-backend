@@ -12,8 +12,10 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends ApiController
 {
@@ -108,20 +110,41 @@ class OrderController extends ApiController
             $order->$field = $request->get($field, $this->fields[$field]);
         }
 
-        $order->save();
+        DB::beginTransaction();
 
-        if ($request->has('products')) {
-            // 发货的产品数量以及单价等等
-            $products = $request->get('products');
-            foreach ($products as $product) {
-                $productCollec = Product::where('name', $product['name'])->first();
-                $productId = $productCollec->id;
-                $order->products()->attach($productId, [
-                    'count' => $product['count'],
-                    'price' => $product['price'],
-                ]);
+        try {
+            $order->save();
+
+            if ($request->has('products')) {
+                // 发货的产品数量以及单价等等
+                $products = $request->get('products');
+                foreach ($products as $product) {
+                    $productCollec = Product::where('name', $product['name'])->first();
+                    $productId = $productCollec->id;
+                    $order->products()->attach($productId, [
+                        'count' => $product['count'],
+                        'price' => $product['price'],
+                    ]);
+
+                    // 亚马逊 库存减少 warehouse_id == 2
+                    $warehouseHome = $productCollec->warehouses()->where('warehouse_id', 2)->get();
+                    if ($warehouseHome->isEmpty()) {
+                        $productCollec->warehouses()->attach(2, ['inventory' => -$product['count']]);
+                    } else {
+                        // 更改库存
+                        DB::table('product_warehouse')
+                            ->where('product_id', '=', $productId)
+                            ->where('warehouse_id', '=', 2)
+                            ->decrement('inventory', $product['count']);
+                    }
+                }
             }
+        } catch (ValidationException $e) {
+            DB::rollback();
+            return $this->failed('Add failed');
         }
+
+        DB::commit();
 
         return $this->message('add success');
     }
@@ -148,7 +171,7 @@ class OrderController extends ApiController
 
         $customer_id = Customer::where('email', $request->input('customer_email'))->first()->id;
         $request->request->add([
-           'customer_id' => $customer_id
+            'customer_id' => $customer_id
         ]);
 
         $order = Order::find($id);
@@ -156,15 +179,41 @@ class OrderController extends ApiController
             $order->$field = $request->filled($field) ? $request->get($field) : $order->$field;
         }
 
-        $order->save();
-        $products = $request->get('products');
-        $syncProducts = [];
-        foreach ($products as $product) {
-            $productCollec = Product::where('name', $product['name'])->first();
-            $productId = $productCollec->id;
-            $syncProducts[$productId] = ['count' => $product['count'], 'price' => $product['price'],];
+        DB::beginTransaction();
+
+        try {
+            $order->save();
+            $products = $request->get('products');
+            $syncProducts = [];
+            foreach ($products as $product) {
+                $productCollec = Product::where('name', $product['name'])->first();
+                $productId = $productCollec->id;
+                $syncProducts[$productId] = ['count' => $product['count'], 'price' => $product['price'],];
+
+                // 计算 count 改变
+                $oldCount = DB::table('order_product')
+                    ->select('id', 'count')
+                    ->where('product_id', $productId)
+                    ->where('order_id', $id)
+                    ->first()
+                    ->count;
+                $updateCount = $product['count'] - $oldCount;
+
+                // 修改库存 从亚马逊仓库发货 id = 2
+                if ($updateCount !== 0) {
+                    DB::table('product_warehouse')
+                        ->where('product_id', '=', $productId)
+                        ->where('warehouse_id', '=', 2)
+                        ->decrement('inventory', $updateCount);
+                }
+            }
+            $order->products()->sync($syncProducts);
+        } catch (ValidationException $e) {
+            DB::rollback();
+            return $this->failed('update failed');
         }
-        $order->products()->sync($syncProducts);
+
+        DB::commit();
 
         return $this->message('update success');
     }
