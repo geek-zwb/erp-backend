@@ -11,8 +11,10 @@ namespace App\Http\Controllers\Api;
 use App\Models\Product;
 use App\Models\Purchase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseController extends ApiController
 {
@@ -100,20 +102,43 @@ class PurchaseController extends ApiController
             $purchase->$field = $request->get($field, $this->fields[$field]);
         }
 
-        $purchase->save();
+        DB::beginTransaction();
 
-        if ($request->has('products')) {
-            // 订购的产品数量以及单价等等
-            $products = $request->get('products');
-            foreach ($products as $product) {
-                $productCollec = Product::where('name', $product['name'])->first();
-                $productId = $productCollec->id;
-                $purchase->products()->attach($productId, [
-                    'count' => $product['count'],
-                    'price' => $product['price'],
-                ]);
+        try {
+            $purchase->save();
+
+            if ($request->has('products')) {
+                // 订购的产品数量以及单价等等
+                $products = $request->get('products');
+                foreach ($products as $product) {
+                    $productCollec = Product::where('name', $product['name'])->first();
+                    $productId = $productCollec->id;
+                    $purchase->products()->attach($productId, [
+                        'count' => $product['count'],
+                        'price' => $product['price'],
+                    ]);
+
+                    // home 库存增加
+                    $warehouseHome = $productCollec->warehouses()->where('warehouse_id', 1)->get();
+                    if ($warehouseHome->isEmpty()) {
+                        // 新产品，第一次进货？~
+                        $productCollec->warehouses()->attach(1, ['inventory' => $product['count']]);
+                    } else {
+                        // 更改库存
+                        DB::table('product_warehouse')
+                            ->where('product_id', '=', $productId)
+                            ->where('warehouse_id', '=', 1)
+                            ->increment('inventory', $product['count']);
+                    }
+
+                }
             }
+        } catch (ValidationException $e) {
+            DB::rollback();
+            return $this->failed('Add failed');
         }
+
+        DB::commit();
 
         return $this->success($purchase);
     }
@@ -143,15 +168,41 @@ class PurchaseController extends ApiController
             $purchase->$field = $request->filled($field) ? $request->get($field) : $purchase->$field;
         }
 
-        $purchase->save();
-        $products = $request->get('products');
-        $syncProducts = [];
-        foreach ($products as $product) {
-            $productCollec = Product::where('name', $product['name'])->first();
-            $productId = $productCollec->id;
-            $syncProducts[$productId] = ['count' => $product['count'], 'price' => $product['price'],];
+        DB::beginTransaction();
+
+        try {
+            $purchase->save();
+            $products = $request->get('products');
+            $syncProducts = [];
+            foreach ($products as $product) {
+                $productCollec = Product::where('name', $product['name'])->first();
+                $productId = $productCollec->id;
+                $syncProducts[$productId] = ['count' => $product['count'], 'price' => $product['price'],];
+
+                // 计算 count 改变
+                $oldCount = DB::table('product_purchase')
+                    ->select('id', 'count')
+                    ->where('product_id', $productId)
+                    ->where('purchase_id', $id)
+                    ->first()
+                    ->count;
+                $updateCount = $product['count'] - $oldCount;
+
+                // 修改库存
+                if ($updateCount !== 0) {
+                    DB::table('product_warehouse')
+                        ->where('product_id', '=', $productId)
+                        ->where('warehouse_id', '=', 1)
+                        ->increment('inventory', $updateCount);
+                }
+            }
+            $purchase->products()->sync($syncProducts);
+        } catch (ValidationException $e) {
+            DB::rollback();
+            return $this->failed('update failed');
         }
-        $purchase->products()->sync($syncProducts);
+
+        DB::commit();
 
         return $this->message('update success');
     }
@@ -164,11 +215,29 @@ class PurchaseController extends ApiController
      */
     public function destroy($id)
     {
-        $purchase = Purchase::find($id);
+        $purchase = Purchase::with('products')->where('id', $id)->first();
 
-        $purchase->products()->detach();
+        DB::beginTransaction();
 
-        $purchase->delete();
+        try {
+            // 改变库存
+            foreach ($purchase->products as $product) {
+                $inventory = $product->pivot->count;
+                // 固定了两个仓库，id = 1 代表 家
+                DB::table('product_warehouse')
+                    ->where('product_id', '=', $product->id)
+                    ->where('warehouse_id', '=', 1)
+                    ->decrement('inventory', $inventory);
+            }
+            $purchase->products()->detach();
+
+            $purchase->delete();
+        } catch (ValidationException $e) {
+            DB::rollback();
+            return $this->failed('delete failed');
+        }
+
+        DB::commit();
 
         return $this->message('delete success');
     }
