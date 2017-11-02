@@ -29,8 +29,12 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::get('customer/{key}', 'Api\CustomerController@getCustomerByKey');
     Route::resource('customer', 'Api\CustomerController');
 
+    Route::post('warehouse/transfer', 'Api\WarehouseController@transfer');
     Route::resource('warehouse', 'Api\WarehouseController');
     Route::resource('purchase', 'Api\PurchaseController');
     Route::resource('product', 'Api\ProductController');
     Route::resource('order', 'Api\OrderController');
+
+    // 统计分析
+    Route::post('analysis/supplier/{id}', 'Api\AnalysisController@supplierAna');
 });

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Product;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class WarehouseController extends ApiController
 {
@@ -93,5 +96,48 @@ class WarehouseController extends ApiController
         $warehouse->delete();
 
         return $this->message('delete success');
+    }
+
+    /**
+     * 产品库存转移
+     * TODO 库存转移中产生的运费？？？ 额外开销统计~
+     * @param Request $request
+     * @return mixed
+     */
+    public function transfer(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'from' => 'required|numeric|exists:warehouses,id',
+            'to' => 'required|numeric|exists:warehouses,id',
+            'products' => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->failed($validator->errors());
+        }
+
+        $from = $request->input('from');
+        $to = $request->input('to');
+        $products = $request->input('products');
+
+        DB::beginTransaction();
+        try {
+            foreach ($products as $product) {
+                $productCollec = Product::select('id')->find($product['id']);
+                DB::table('product_warehouse')
+                    ->where('warehouse_id', $from)
+                    ->where('product_id', $productCollec->id)
+                    ->decrement('inventory', $product['count']);
+                DB::table('product_warehouse')
+                    ->where('warehouse_id', $to)
+                    ->where('product_id', $productCollec->id)
+                    ->increment('inventory', $product['count']);
+            }
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return $this->failed('transfer fail');
+        }
+        DB::commit();
+
+        return $this->message('transfer success');
     }
 }
