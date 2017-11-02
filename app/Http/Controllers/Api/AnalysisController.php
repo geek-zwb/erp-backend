@@ -14,15 +14,21 @@ class AnalysisController extends ApiController
      * @return mixed
      */
     public function supplierAna(Request $request,$id) {
-        $fromDate = $request->get('fromDate', date('Y-m-1'));
+        $fromDate = $request->get('fromDate', date('Y-01-01'));
         $toDate = $request->get('toDate', date('Y-m-d'));
+        // 需要同时包括 fromDate 和 toDate 这两天 ？？？
+        $toDate = date('Y-m-d', strtotime("$toDate +1 day"));
         $purchases = Supplier::find($id)->purchases()
             ->with('products')
-            ->where([
-                ['created_at', '>=', $fromDate],
-                ['created_at', '<=', $toDate],
-            ])
+            ->whereBetween('created_at', [$fromDate, $toDate])
             ->get();
+
+        foreach ($purchases as $purchase) {
+            $purchase->purchaseCost = 0;
+            foreach ($purchase->products as $product) {
+                $purchase->purchaseCost += $product->pivot->count * $product->pivot->price;
+            }
+        }
 
         return $this->success($purchases);
     }
