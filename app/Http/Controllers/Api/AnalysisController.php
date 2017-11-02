@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class AnalysisController extends ApiController
 {
     /**
-     * 供应商 供货统计分析 默认为当月
+     * 供应商 供货统计分析 默认为当年
      * @param Request $request
      * @param $id
      * @return mixed

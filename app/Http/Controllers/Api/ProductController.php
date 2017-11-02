@@ -43,7 +43,9 @@ class ProductController extends ApiController
         // 排序
         $column = $request->query('column', 'id');
         $order = $request->query('order', 'desc');
-
+        $fromDate = strtotime($request->query('fromDate', date('Y-01-01')));
+        $toDate = $request->query('toDate', date('Y-m-d'));
+        $toDate = strtotime("$toDate +1 day");
 
         $products = Product::with(['orders', 'purchases', 'warehouses'])
             ->skip($skip)
@@ -62,6 +64,8 @@ class ProductController extends ApiController
 
             // 售出统计
             foreach ($product->orders as $order) {
+                $created_at = strtotime($order->created_at);
+                if($created_at < $fromDate || $created_at > $toDate) continue;
                 $orderCount += 1;
                 $product->outQty += $order->pivot->count;
                 $product->income += $order->pivot->price * $order->pivot->count;
@@ -70,6 +74,8 @@ class ProductController extends ApiController
 
             // 采购统计
             foreach ($product->purchases as $purchase) {
+                $created_at = strtotime($purchase->created_at);
+                if($created_at < $fromDate || $created_at > $toDate) continue;
                 $product->inQty += $purchase->pivot->count;
                 $product->totalCost += $purchase->pivot->price * $purchase->pivot->count;
             }
@@ -80,8 +86,8 @@ class ProductController extends ApiController
                 $warehouse->inventory += $warehouse->pivot->inventory;
             }
 
-            unset($product->purchases);
-            unset($product->orders);
+            //unset($product->purchases);
+            //unset($product->orders);
         }
 
         $result['data'] = $products;
