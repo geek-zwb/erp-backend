@@ -18,7 +18,9 @@ class CreateOrderProductTable extends Migration
             $table->unsignedInteger('order_id');
             $table->unsignedInteger('product_id');
             $table->unsignedInteger('count')->comment('该订单中该产品的数量');
+            $table->unsignedInteger('returns_count')->default(0)->comment('该订单中该产品退货且损坏的数量');
             $table->decimal('price', 8, 3)->comment('售出单价');
+            $table->unsignedTinyInteger('status')->default(1)->comment('订单状态');
             $table->timestamps();
 
             $table->foreign('product_id')->references('id')->on('products');

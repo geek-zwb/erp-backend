@@ -48,8 +48,14 @@ class PurchaseController extends ApiController
         $column = $request->query('column', 'id');
         $order = $request->query('order', 'desc');
 
+        // 时间筛选
+        $fromDate = $request->query('fromDate', date('Y-01-01'));
+        $toDate = $request->query('toDate', date('Y-m-d'));
+        $toDate = date('Y-m-d', strtotime("$toDate +1 day"));
+
 
         $purchases = Purchase::with('products')
+            ->whereBetween('created_at', [$fromDate, $toDate])
             ->skip($skip)
             ->take($perPage)
             ->orderBy($column, $order)
