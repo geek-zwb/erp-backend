@@ -13,5 +13,5 @@
 
 // 前端 react-router 使用 react, browse-router 返回 index.html
 Route::get('{reactRoutes}', function () {
-    return view('index'); // start view
+    return view('home'); // start view
 })->where('reactRoutes', '^((?!api).)*$'); // except 'api' word
